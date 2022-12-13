@@ -1,238 +1,90 @@
 #!/bin/bash
 
 self="${0##*/}"
+flags=0
+needIP=0
+file="transfer.log"
 
 show_help () {
-	cat <<END_HELP
+        cat <<END_HELP
 
-tlog	Search the transfer.log (by defalut) for useful information
+$self	search transfer.log for useful information
 
-Usage: $self [-c|r|i] [-I address] [-f filename] [-h]
+Usage: $self	[-c|r|a|i] [-I address] [-f filename] [-h]
 
 Options:
 
-	-c	Print top returned HTTP codes
-	-r	Print top requests
-	-i	Print top IPs
-	-a	Print top user agents
-	-I	Specify a IP to search for (in transfer.log by default)
-	-f	Specify a file to search
-	-h	Display this message 
+	-c		Show HTTP codes
+	-r		Show refferers
+	-a		Show user agents
+	-i		Show IPs
+	-I address	Specify a IP address to search for
+	-f filename	Specify a file to search through
+
+Hint: You can also use -I to search for other stuff
 
 END_HELP
 }
-extras=0
-formt () {
-	sort | uniq -c | sort -rn | head
-}
-while getopts 'criaI:f:h' OPTION; do
-        case "$OPTION" in
-                c) #Print HTTP codes
-			extras=$((extras+1))
-			#cat transfer.log | cut -d " " -f 9 | sort | uniq -c | sort -rn | head
-			echo "HTTP codes "
-                        ;;
-                r) #Print requests
-			extras=$((extras+2))
-			#cat transfer.log | cut -d " " -f 11 | sort | uniq -c | sort -rn | head
-			echo "Refferers "
-                        ;;
-		i) #Print IPs
-			extras=$((extras+4))
-			#cat transfer.log | cut -d " " -f 1 | sort | uniq -c | sort -rn | head
-			echo "IP addresses "
+while getopts "craiI:f:h" args; do
+	case "$args" in
+		c)
+			if [[ $flags != 0 ]]; then
+				flags+=",\$9"
+			else
+				flags="\$9"
+			fi
+			echo "HTTP codes"
 			;;
-		a) #Print User agents
-			extras=$((extras+8))
-			#cat transfer.log | awk '{print $NF}' | sort | uniq -c | sort -rn | head
-			echo "UserAgents "
+		r)
+			if [[ $flags != 0 ]]; then
+				flags+=",\$11"
+			else
+				flags="\$11"
+			fi
+			echo "Referrers"
 			;;
-                I) #Specify IP addresses
+		a)
+			if [[ $flags != 0 ]]; then
+				flags+=",\$NF"
+			else
+				flags="\$NF"
+			fi
+			echo "User agents"
+			;;
+		i)
+			if [[ $flags != 0 ]]; then
+				flags+=",\$1"
+			else
+				flags="\$1"
+			fi
+			echo "IP addresses"
+			;;
+		I)
 			needIP="$OPTARG"
-			#gerp "$needIP" transfer.log 
-			echo
-			echo "NeedIp:$needIP "
-                        ;;
-                f) #Specify a file to search
-                        file="$OPTARG"
-			echo
-			echo "File:$file "
-                        ;;
-                h) #Display usage
-			show_help
-			exit
+			echo "NeedIP:$needIP"
 			;;
-                ?)
-                        echo "Script usage: ${0##*/} [-c] [-r] [-i] [-I address] [-f filename] [-h]" >&2
-                        exit 1
-                        ;;
-        esac
+		f)
+			file="$OPTARG"
+			;;
+		h)
+			show_help
+			exit 1
+			;;
+		?)
+			echo "Usage: $self [-c|r|a|i] [-I address] [-f filename] [-h]"
+			exit 1
+			;;
+	esac
 done
+echo "File:$file"
 echo
-	if [[ "$extras" == 1 ]]; then
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | cut -d " " -f 9 | formt
-		elif [[ $file ]]; then
-			cat "$file" | cut -d " " -f 9 | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | cut -d " " -f 9 | formt
-		else
-			cat transfer.log | cut -d " " -f 9 | formt
-		fi
-	elif [[ "$extras" == 2 ]]; then
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | cut -d " " -f 11 | formt
-		elif [[ $file ]]; then
-			cat "$file" | cut -d " " -f 11 | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | cut -d " " -f 11 | formt
-		else
-			cat transfer.log | cut -d " " -f 11 | formt
-		fi
-	elif [[ $extras == 3 ]]; then
-		#cat transfer.log | cut -d " " -f 9,11 | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | cut -d " " -f 9,11 | formt
-		elif [[ $file ]]; then
-			cat "$file" | cut -d " " -f 9,11 | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | cut -d " " -f 9,11 | formt
-		else
-			cat transfer.log | cut -d " " -f 9,11 | formt
-		fi
-	elif [[ $extras = 4 ]]; then
-		#cat transfer.log | cut -d " " -f 1 | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | cut -d " " -f 1 | formt
-		elif [[ $file ]]; then
-			cat "$file" | cut -d " " -f 1 | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | cut -d " " -f 1 | formt
-		else
-			cat transfer.log | cut -d " " -f 1 | formt
-		fi
-	elif [[ $extras = 5 ]]; then
-		#cat transfer.log | cut -d " " -f 1,9 | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | cut -d " " -f 1,9 | formt
-		elif [[ $file ]]; then
-			cat "$file" | cut -d " " -f 1,9 | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | cut -d " " -f 1,9 | formt
-		else
-			cat transfer.log | cut -d " " -f 1,9 | formt
-		fi
-	elif [[ $extras = 6 ]]; then
-		#cat transfer.log | cut -d " " -f 9,11 | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | cut -d " " -f 1,11 | formt
-		elif [[ $file ]]; then
-			cat "$file" | cut -d " " -f 1,11 | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | cut -d " " -f 1,11 | formt
-		else
-			cat transfer.log | cut -d " " -f 1,11 | formt
-		fi
-	elif [[ $extras = 7 ]]; then	
-		#cat transfer.log | cut -d " " -f 1,9,11 | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | cut -d " " -f 1,9,11 | formt
-		elif [[ $file ]]; then
-			cat "$file" | cut -d " " -f 1,9,11 | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | cut -d " " -f 1,9,11 | formt
-		else
-			cat transfer.log | cut -d " " -f 1,9,11 | formt
-		fi
-	elif [[ $extras = 8 ]]; then
-		#cat transfer.log | awk '{print $NF}' | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | awk '{print $NF}' | formt
-		elif [[ $file ]]; then
-			cat "$file" | awk '{print $NF}' | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | awk '{print $NF}' | formt
-		else
-			cat transfer.log | awk '{print $NF}' | formt
-		fi
-	elif [[ $extras = 9 ]]; then
-		#cat transfer.log | awk '{print $9, $NF}' | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | awk '{print $9, $NF}' | formt
-		elif [[ $file ]]; then
-			cat "$file" | awk '{print $9, $NF}' | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | awk '{print $9, $NF}' | formt
-		else
-			cat transfer.log | awk '{print $9, $NF}' | formt
-		fi
-	elif [[ $extras = 10 ]]; then
-		#cat transfer.log | awk '{print $11, $NF}' | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | awk '{print $11, $NF}' | formt
-		elif [[ $file ]]; then
-			cat "$file" | awk '{print $11, $NF}' | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | awk '{print $11, $NF}' | formt
-		else
-			cat transfer.log | awk '{print $11, $NF}' | formt
-		fi
-	elif [[ $extras = 11 ]]; then
-		#cat transfer.log | awk '{print $9, $11, $NF}' | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | awk '{print $9, $11, $NF}' | formt
-		elif [[ $file ]]; then
-			cat "$file" | awk '{print $9, $11, $NF}' | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | awk '{print $9, $11, $NF}' | formt
-		else
-			cat transfer.log | awk '{print $9, $11, $NF}' | formt
-		fi
-	elif [[ $extras = 12 ]]; then
-		#cat transfer.log | awk '{print $1, $NF}' | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | awk '{print $1, $NF}' | formt
-		elif [[ $file ]]; then
-			cat "$file" | awk '{print $1, $NF}' | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | awk '{print $1, $NF}' | formt
-		else
-			cat transfer.log | awk '{print $1, $NF}' | formt
-		fi
-	elif [[ $extras = 13 ]]; then
-		#cat transfer.log | awk '{print $1, $9, $NF}' | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | awk '{print $1, $9, $NF}' | formt
-		elif [[ $file ]]; then
-			cat "$file" | awk '{print $1, $9, $NF}' | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | awk '{print $1, $9, $NF}' | formt
-		else
-			cat transfer.log | awk '{print $1, $9, $NF}' | formt
-		fi
-	elif [[ $extras = 14 ]]; then
-		#cat transfer.log | awk '{print $1, $11, $NF}' | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | awk '{print $1, $11, $NF}' | formt
-		elif [[ $file ]]; then
-			cat "$file" | awk '{print $1, $11, $NF}' | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | awk '{print $1, $11, $NF}' | formt
-		else
-			cat transfer.log | awk '{print $1, $11, $NF}' | formt
-		fi
-	elif [[ $extras = 15 ]]; then
-		#cat transfer.log | awk '{print $1, $9, $11, $NF}' | formt
-		if [[ $needIP && $file ]]; then
-			grep "$needIP" "$file" | awk '{print $1, $9, $11, $NF}' | formt
-		elif [[ $file ]]; then
-			cat "$file" | awk '{print $1, $9, $11, $NF}' | formt
-		elif [[ $needIP ]]; then
-			grep "$needIP" transfer.log | awk '{print $1, $9, $11, $NF}' | formt
-		else
-			cat transfer.log | awk '{print $1, $9, $11, $NF}' | formt
-		fi
+if [[ $needIP != 0 ]]; then
+	if [[ $flags != 0 ]]; then
+		grep "$needIP" "$file" | awk '{print '$flags'}' | sort | uniq -c | sort -rn | head
 	else
-		echo "Something went horribly wrong"
+		grep "$needIP" "$file"
 	fi
+else
+	cat "$file" | awk '{print '$flags'}' | sort | uniq -c | sort -rn | head
+fi
 shift "$(($OPTIND -1))"
