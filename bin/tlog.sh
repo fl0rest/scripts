@@ -4,6 +4,8 @@ self="${0##*/}"
 flags=0
 needIP=0
 file="transfer.log"
+cols=""
+num="10"
 
 show_help () {
         cat <<END_HELP
@@ -18,6 +20,8 @@ Options:
 	-r		Show refferers
 	-a		Show user agents
 	-i		Show IPs
+	-k		Specify columns to print (use with -I)
+	-n		Specify the number of results (default 10)
 	-I address	Specify a IP address to search for
 	-f filename	Specify a file to search through
 
@@ -25,8 +29,12 @@ Hint: You can also use -I to search for other stuff
 
 END_HELP
 }
-while getopts "craiI:f:h" args; do
+while getopts "I:craik:f:n:h" args; do
 	case "$args" in
+		I)
+			needIP="$OPTARG"
+			echo "NeedIP:$needIP"
+			;;
 		c)
 			if [[ $flags != 0 ]]; then
 				flags+=",\$9"
@@ -59,12 +67,15 @@ while getopts "craiI:f:h" args; do
 			fi
 			echo "IP addresses"
 			;;
-		I)
-			needIP="$OPTARG"
-			echo "NeedIP:$needIP"
+		k)
+			cols="$OPTARG"
+			echo "Columns:$cols"
 			;;
 		f)
 			file="$OPTARG"
+			;;
+		n)
+			num="$OPTARG"
 			;;
 		h)
 			show_help
@@ -77,14 +88,19 @@ while getopts "craiI:f:h" args; do
 	esac
 done
 echo "File:$file"
+echo "Results:$num"
 echo
-if [[ $needIP != 0 ]]; then
-	if [[ $flags != 0 ]]; then
-		grep "$needIP" "$file" | awk '{print '$flags'}' | sort | uniq -c | sort -rn | head
+if [[ $cols == "" ]]; then
+	if [[ $needIP != 0 ]]; then
+		if [[ $flags != 0 ]]; then
+			grep "$needIP" "$file" | awk '{print '$flags'}' | sort | uniq -c | sort -rn | head -n "$num"
+		else
+			grep "$needIP" "$file"
+		fi
 	else
-		grep "$needIP" "$file"
+		cat "$file" | awk '{print '$flags'}' | sort | uniq -c | sort -rn | head -n "$num"
 	fi
 else
-	cat "$file" | awk '{print '$flags'}' | sort | uniq -c | sort -rn | head
+	grep "$needIP" "$file" | cut -d " " -f "$cols" | sort | uniq -c | sort -rn | head -n "$num"
 fi
 shift "$(($OPTIND -1))"
