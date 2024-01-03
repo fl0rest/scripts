@@ -1,0 +1,28 @@
+#!/bin/bash
+
+_FILE=$1
+
+if [ -z $_FILE ];
+then
+        while read line;
+        do
+                _HITS=$(echo $line | awk '{print $1}');
+                _IP=$(echo $line | awk '{print $2}' | cut -d "-" -f1);
+                _RAW=$(curl --silent https://ipinfo.io/$_IP);
+                _IPC=$(echo $_RAW | jq -r .country )
+                _IPR=$(echo $_RAW | jq -r .region )
+                _IPO=$(echo $_RAW | jq -r .org )
+                echo -e "$_HITS $_IP -- $_IPC - $_IPR / $_IPO";
+        done
+else
+        while read line;
+        do
+                _HITS=$(echo $line | awk '{print $1}');
+                _IP=$(echo $line | awk '{print $2}' | cut -d "-" -f1);
+                _RAW=$(curl --silent https://ipinfo.io/$_IP);
+                _IPC=$(echo $_RAW | jq -r .country );
+                _IPR=$(echo $_RAW | jq -r .region );
+                _IPO=$(echo $_RAW | jq -r .org );
+                echo -e "$_HITS $_IP -- $_IPC - $_IPR / $_IPO";
+        done < $_FILE
+fi
