@@ -1,0 +1,46 @@
+#!/bin/bash
+domains=$(nxcli $1 --sites | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
+
+recs=""
+function search() {
+if [[ -z $recs ]]; then
+    for i in $domains; do echo $i - $(dig a +short $i) | column -t; done
+    else
+    for i in $domains; do echo $i - $(dig $recs +short $i) | column -t; done
+fi
+}
+
+help() {
+    cat << endHelp
+    accips  Get DNS records for all domains of an account (by default searches for A records)
+
+    Usage: accips [NX ID] [-r|f|m|h]
+
+    Options:
+
+    r   rDNS query
+    m   MX query
+    h   Show this
+endHelp
+}
+while getopts "mrfh" args; do
+    case $args in
+        m)
+            recs=" mx"
+            search
+            ;;
+        r)
+            for i in $domains; do echo $i - $(dig -x $(dig $i +short) +short) | column -t; done
+            ;;
+        f)
+            echo $domains | tr " " "\n" | tee account_domains.txt
+            ;;
+        h)
+            help
+            ;;
+        ?)
+            echo "Usage: accips [m|r|f]"
+            exit 1
+            ;;
+    esac
+done
