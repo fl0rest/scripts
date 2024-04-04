@@ -1,7 +1,7 @@
 #!/bin/bash
 #By DougieT, ty MikeJ <3
-domains=$(nxcli $1 --sites | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
-
+#domains=$(nxcli $1 --sites | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
+domains=$(tail -n +12 ../sites | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
 recs=""
 function search() {
 if [[ -z $recs ]]; then
@@ -9,6 +9,7 @@ if [[ -z $recs ]]; then
     else
     for i in $domains; do echo $i - $(dig $recs +short $i) | column -t; done
 fi
+exit 1
 }
 
 if [ $(wc -l <<<$domains) = 1 ]; then
@@ -40,23 +41,24 @@ help() {
 
     r   rDNS query
     m   MX query
-    f   Output to a file
+    f   Output domains to a file
     h   Show this
 endHelp
 }
 
-search
+
 while getopts "mrfh" args; do
     case $args in
+        f)
+            echo $domains | tr " " "\n" | tee account_domains.txt
+            ;;
         m)
             recs=" mx"
             search
             ;;
         r)
             for i in $domains; do echo $i - $(dig -x $(dig $i +short) +short) | column -t; done
-            ;;
-        f)
-            echo $domains | tr " " "\n" | tee account_domains.txt
+            exit 1
             ;;
         h)
             help
@@ -67,3 +69,4 @@ while getopts "mrfh" args; do
             ;;
     esac
 done
+search
