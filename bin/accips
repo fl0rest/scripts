@@ -41,7 +41,7 @@ while getopts "mrfh" args; do
             help
             ;;
         ?)
-            echo "Usage: accips [m|r|f]"
+            echo "Usage: accips [m|r|f|h]"
             exit 1
             ;;
     esac
