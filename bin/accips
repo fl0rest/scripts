@@ -32,8 +32,14 @@ while getopts "i:mrfh" args; do
     case $args in
         i)
             accID="$OPTARG"
-            raw=$(nxclient $accID --sites)
-            domains=$(echo "$raw" | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
+            # raw=$(nxclient $accID --sites)
+            raw=$(cat ../sites)
+            if [[ $(echo "$raw" | grep Nickname) ]]; then #ty BradS
+                domains=$(echo "$raw" | tail -n +12 | cut -d'│' -f 3 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d' | grep '[a-z]\.[a-z]')
+                domains+=$(echo; echo "$raw" | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
+            else
+                domains=$(echo; echo "$raw" | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
+            fi
             if [[ ! -z $(echo $domains | grep "Backups") ]]; then
                 domain=$(echo "$raw" | grep Name | awk '{print $2}')
                 echo "Only one domain found! Printing DNS records..."
