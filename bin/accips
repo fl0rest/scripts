@@ -1,8 +1,9 @@
 #!/bin/bash
 #By DougieT, ty MikeJ <3
-domains=$(nxcli $1 --sites | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
-
+#domains=$(nxcli $accID --sites | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
+domains=$(tail -n +12 ../sites | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
 recs=""
+
 function search() {
 if [[ -z $recs ]]; then
     for i in $domains; do echo $i - $(dig a +short $i) | column -t; done
@@ -35,26 +36,29 @@ help() {
     cat << endHelp
     accips  Get DNS records for all domains of an account (by default searches for A records)
 
-    Usage: accips [NX ID] [-r|f|m|h]
+    Usage: accips [-i NX_account_ID] [-r|f|m|h]
 
     Options:
 
-    r   rDNS query
-    m   MX query
-    f   Output domains to a file
-    h   Show this
+    i [NX ID]   Account ID
+    r           rDNS query
+    m           MX query
+    f           Output domains to a file
+    h           Show this
 endHelp
 }
 
 
-while getopts "mrfh" args; do
+while getopts "i:mrfh" args; do
     case $args in
+        i)
+            accID="$OPTARG"
+            ;;
         f)
             echo $domains | tr " " "\n" | tee account_domains.txt
             ;;
         m)
             recs=" mx"
-            search
             ;;
         r)
             for i in $domains; do echo $i - $(dig -x $(dig $i +short) +short) | column -t; done
@@ -64,9 +68,17 @@ while getopts "mrfh" args; do
             help
             ;;
         ?)
-            echo "Usage: accips [m|r|f|h]"
+            echo "Usage: accips -i [-m|r|f|h]"
             exit 1
             ;;
+        :)
+            echo -e "Error: Option -$OPTARG requres an argument"
+            ;;
     esac
+    #shift "$((OPTIND -1))"
 done
+if [[ -z $accID ]]; then
+    echo "No Account ID provided!" >&2
+    exit
+    fi
 search
