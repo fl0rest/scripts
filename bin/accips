@@ -67,6 +67,7 @@ while getopts "i:mrfh" args; do
             ;;
         h)
             help
+            exit 1
             ;;
         ?)
             echo "Usage: accips -i [-m|r|f|h]"
