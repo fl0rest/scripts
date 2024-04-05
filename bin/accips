@@ -39,19 +39,19 @@ while getopts "i:mrfh" args; do
                 echo "Only one domain found! Printing DNS records..."
                 echo $domain
                 echo -n "NS: "
-                dig ns $domains +short | awk '{printf "%s ",$0 } END {print ""}'
+                dig ns $domain +short | awk '{printf "%s ",$0 } END {print ""}'
                 echo -n "A: "
-                dig $domains +short | awk '{printf "%s ",$0} END {print ""}'
+                dig $domain +short | awk '{printf "%s ",$0} END {print ""}'
                 echo -n "WWW: "
-                dig www.$domains +short | awk '{printf "%s ",$0} END {print ""}'
+                dig www.$domain +short | awk '{printf "%s ",$0} END {print ""}'
                 echo -n "rDNS: "
-                dig -x $(dig $domains +short) +short | awk '{printf "%s ",$0} END {print ""}'
+                dig -x $(dig $domain +short) +short | awk '{printf "%s ",$0} END {print ""}'
                 echo -n "MX: "
-                dig mx $domains +short ; dig $(dig mx $domains +short) +short | awk '{printf "%s ",$0} END {print ""}'
+                dig mx $domain +short ; dig $(dig mx $domain +short) +short | awk '{printf "%s ",$0} END {print ""}'
                 echo "-----SPF and DKIM-----"
                 dig txt $domains +short
-                dig txt default._domainkey.$domains +short
-                dig txt _dmarc.$domains +short
+                dig txt default._domainkey.$domain +short
+                dig txt _dmarc.$domain +short
                 exit 1
             fi
             ;;
