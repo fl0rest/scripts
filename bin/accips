@@ -32,10 +32,13 @@ while getopts "i:mrfh" args; do
     case $args in
         i)
             accID="$OPTARG"
-            domains=$(nxclient $accID --sites | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
-            #If account has only one domain this won't currently run properly
-            if [[ $(wc -l <<<"$domains") = 1 ]]; then
+            raw=$(nxclient $accID --sites)
+            domains=$(echo "$raw" | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
+            #If account has only one domain this won't currently run properly best difference I can see is no box characters when only one domain
+            if [[ ! -z $(echo $domains | grep "Backups") ]]; then
+                domain=$(echo "$raw" | grep Name | awk '{print $2}')
                 echo "Only one domain found! Printing DNS records..."
+                echo $domain
                 echo -n "NS: "
                 dig ns $domains +short | awk '{printf "%s ",$0 } END {print ""}'
                 echo -n "A: "
