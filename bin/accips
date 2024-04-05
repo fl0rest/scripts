@@ -32,8 +32,7 @@ while getopts "i:mrfh" args; do
     case $args in
         i)
             accID="$OPTARG"
-            # raw=$(nxclient $accID --sites)
-            raw=$(cat ../sites)
+            raw=$(nxclient $accID --sites)
             if [[ $(echo "$raw" | grep Nickname) ]]; then #ty BradS
                 domains=$(echo "$raw" | tail -n +12 | cut -d'│' -f 3 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d' | grep '[a-z]\.[a-z]')
                 domains+=$(echo; echo "$raw" | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
