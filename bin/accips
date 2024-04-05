@@ -32,8 +32,8 @@ while getopts "i:mrfh" args; do
     case $args in
         i)
             accID="$OPTARG"
-            domains=$(nxcli $accID --sites | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
-            if [ $(wc -l <<<$domains) = 1 ]; then
+            domains=$(nxclient $accID --sites | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
+            if [[ $(wc -l <<<"$domains") = 1 ]]; then
                 echo "Only one domain found! Printing DNS records..."
                 echo -n "NS: "
                 dig ns $domains +short | awk '{printf "%s ",$0 } END {print ""}'
