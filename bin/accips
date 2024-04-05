@@ -49,7 +49,7 @@ while getopts "i:mrfh" args; do
                 echo -n "MX: "
                 dig mx $domain +short ; dig $(dig mx $domain +short) +short | awk '{printf "%s ",$0} END {print ""}'
                 echo "-----SPF and DKIM-----"
-                dig txt $domains +short
+                dig txt $domain +short
                 dig txt default._domainkey.$domain +short
                 dig txt _dmarc.$domain +short
                 exit 1
