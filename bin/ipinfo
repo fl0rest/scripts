@@ -1,28 +1,44 @@
 #!/bin/bash
+#By DougieT and BradS
+_search=$1
 
-_FILE=$1
+if [[ $(echo $_search | grep '^[0-9]') ]]; then
+        curl --silent https://ipinfo.io/$_search | sed -E s#\"\|}\|'\{'\|,##g
+        exit 1
+fi
 
-if [ -z $_FILE ];
-then
+declare _HITS
+if [ -z $_search ]; then
+        echo 1
         while read line;
         do
-                _HITS=$(echo $line | awk '{print $1}');
-                _IP=$(echo $line | awk '{print $2}' | cut -d "-" -f1);
+                if [[ ! $(echo $line | awk '{print $1}' | grep .'\.') ]]; then
+                        _HITS=$(echo $line | awk '{print $1}');
+                        _IP=$(echo $line | awk '{print $2}');
+                else
+                        _IP=$(echo $line | awk '{print $1}' | cut -d "-" -f1);
+                fi
                 _RAW=$(curl --silent https://ipinfo.io/$_IP);
+                # echo $_RAW
                 _IPC=$(echo $_RAW | jq -r .country )
                 _IPR=$(echo $_RAW | jq -r .region )
                 _IPO=$(echo $_RAW | jq -r .org )
                 echo -e "$_HITS $_IP -- $_IPC - $_IPR / $_IPO";
         done
 else
+        echo 2
         while read line;
         do
-                _HITS=$(echo $line | awk '{print $1}');
-                _IP=$(echo $line | awk '{print $2}' | cut -d "-" -f1);
+                if [[ ! $(echo $line | awk '{print $1}' | grep .'\.') ]]; then
+                        _HITS=$(echo $line | awk '{print $1}');
+                        _IP=$(echo $line | awk '{print $2}' | cut -d "-" -f1);
+                else
+                        _IP=$(echo $line | awk '{print $1}' | cut -d "-" -f1);
+                fi
                 _RAW=$(curl --silent https://ipinfo.io/$_IP);
                 _IPC=$(echo $_RAW | jq -r .country );
                 _IPR=$(echo $_RAW | jq -r .region );
                 _IPO=$(echo $_RAW | jq -r .org );
                 echo -e "$_HITS $_IP -- $_IPC - $_IPR / $_IPO";
-        done < $_FILE
+        done < "$_search"
 fi
