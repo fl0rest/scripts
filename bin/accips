@@ -1,8 +1,23 @@
 #!/bin/bash
 #By DougieT, ty MikeJ <3
-#domains=$(nxcli $accID --sites | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
-domains=$(tail -n +12 ../sites | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
 recs=""
+
+
+help() {
+    cat << endHelp
+    accips  Get DNS records for all domains of an account (by default searches for A records)
+
+    Usage: accips [-i NX_account_ID] [-r|f|m|h]
+
+    Options:
+
+    i [NX ID]   Account ID - *HAS TO B FIRST*
+    r           rDNS query
+    m           MX query
+    f           Output domains to a file
+    h           Show this
+endHelp
+}
 
 function search() {
 if [[ -z $recs ]]; then
@@ -13,46 +28,29 @@ fi
 exit 1
 }
 
-if [ $(wc -l <<<$domains) = 1 ]; then
-    echo "Only one domain found! Printing DNS records..."
-    echo -n "NS: "
-    dig ns $domains +short | awk '{printf "%s ",$0 } END {print ""}'
-    echo -n "A: "
-    dig $domains +short | awk '{printf "%s ",$0} END {print ""}'
-    echo -n "WWW: "
-    dig www.$domains +short | awk '{printf "%s ",$0} END {print ""}'
-    echo -n "rDNS: "
-    dig -x $(dig $domains +short) +short | awk '{printf "%s ",$0} END {print ""}'
-    echo -n "MX: "
-    dig mx $domains +short ; dig $(dig mx $domains +short) +short | awk '{printf "%s ",$0} END {print ""}'
-    echo "-----SPF and DKIM-----"
-    dig txt $domains +short
-    dig txt default._domainkey.$domains +short
-    dig txt _dmarc.$domains +short
-    exit 1
-fi
-
-help() {
-    cat << endHelp
-    accips  Get DNS records for all domains of an account (by default searches for A records)
-
-    Usage: accips [-i NX_account_ID] [-r|f|m|h]
-
-    Options:
-
-    i [NX ID]   Account ID
-    r           rDNS query
-    m           MX query
-    f           Output domains to a file
-    h           Show this
-endHelp
-}
-
-
 while getopts "i:mrfh" args; do
     case $args in
         i)
             accID="$OPTARG"
+            domains=$(nxcli $accID --sites | tail -n +12 | cut -d'│' -f 4 | egrep -v 'nxcli|Name|Cname|─' | tr " " "\n" | sed '/^$/d')
+            if [ $(wc -l <<<$domains) = 1 ]; then
+                echo "Only one domain found! Printing DNS records..."
+                echo -n "NS: "
+                dig ns $domains +short | awk '{printf "%s ",$0 } END {print ""}'
+                echo -n "A: "
+                dig $domains +short | awk '{printf "%s ",$0} END {print ""}'
+                echo -n "WWW: "
+                dig www.$domains +short | awk '{printf "%s ",$0} END {print ""}'
+                echo -n "rDNS: "
+                dig -x $(dig $domains +short) +short | awk '{printf "%s ",$0} END {print ""}'
+                echo -n "MX: "
+                dig mx $domains +short ; dig $(dig mx $domains +short) +short | awk '{printf "%s ",$0} END {print ""}'
+                echo "-----SPF and DKIM-----"
+                dig txt $domains +short
+                dig txt default._domainkey.$domains +short
+                dig txt _dmarc.$domains +short
+                exit 1
+            fi
             ;;
         f)
             echo $domains | tr " " "\n" | tee account_domains.txt
